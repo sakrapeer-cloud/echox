@@ -74,3 +74,62 @@ Stuck? Press the **Ask Echo** button (bottom-right) and ask
 - [Routing](/guide/routing/) — static, parameterized, and wildcard routes.
 - [Context](/guide/context/) — the per-request request/response object.
 - [Binding](/guide/binding/) — parse request data into typed structs.
+go mod init research-api
+
+go get github.com/labstack/echo/v4
+go get github.com/jackc/pgx/v5
+go get github.com/jackc/pgx/v5/pgxpool
+go get github.com/golang-jwt/jwt/v5
+go get github.com/go-playground/validator/v10
+go get github.com/joho/godotenv
+go get github.com/google/uuid
+
+package main
+
+import (
+	"log"
+	"os"
+
+	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
+)
+
+func main() {
+	e := echo.New()
+
+	e.Use(middleware.Recover())
+	e.Use(middleware.Logger())
+	e.Use(middleware.CORS())
+
+	api := e.Group("/api/v1")
+
+	api.GET("/health", func(c echo.Context) error {
+		return c.JSON(200, map[string]interface{}{
+			"success": true,
+			"data": map[string]string{
+				"status": "ok",
+			},
+		})
+	})
+
+	registerRoutes(api)
+
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+
+	log.Fatal(e.Start(":" + port))
+}
+
+func registerRoutes(api *echo.Group) {
+	api.GET("/projects", listProjects)
+	api.POST("/projects", createProject)
+	api.GET("/projects/:id", getProject)
+	api.PATCH("/projects/:id", updateProject)
+
+	api.GET("/strategies", listStrategies)
+	api.GET("/research-plans", listResearchPlans)
+	api.GET("/funding-sources", listFundingSources)
+	api.GET("/dashboard/overview", dashboardOverview)
+}
